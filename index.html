@@ -59,21 +59,35 @@
     }
 
     .botao-chamada {
-  display: inline-block;
-  margin-left: 10px;
-  padding: 4px 10px;
-  background-color: #28a745;
-  color: white;
-  text-decoration: none;
-  font-size: 14px;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
-}
+      display: inline-block;
+      margin-left: 10px;
+      padding: 4px 10px;
+      background-color: #28a745;
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      border-radius: 6px;
+      transition: background-color 0.3s ease;
+    }
 
-.botao-chamada:hover {
-  background-color: #218838;
-}
+    .botao-chamada:hover {
+      background-color: #218838;
+    }
 
+    .botao-gps {
+      padding: 8px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .botao-gps:hover {
+      background-color: #0056b3;
+    }
   </style>
 </head>
 <body>
@@ -84,18 +98,17 @@
   </div>
 
   <div class="container">
-    <img src="IMG_20230527_185614.jpg" alt="Foto filha">
+    <img src="img/IMG_20230527_185614.jpg" alt="Foto filha">
     <h2>Francisca Machado</h2>
     <p><strong>Idade:</strong> 7 anos</p>
-  <p>
-  <strong>Contacto Pai:</strong> +351918574111
-  <a href="tel:+351912345678" class="botao-chamada">📞 Ligar</a>
-</p>
-<p>
-  <strong>Contacto Mãe:</strong> +351916966759
-  <a href="tel:+351965432109" class="botao-chamada">📞 Ligar</a>
-</p>
-
+    <p>
+      <strong>Contacto Pai:</strong> +351918574111
+      <a href="tel:+351918574111" class="botao-chamada">📞 Ligar</a>
+    </p>
+    <p>
+      <strong>Contacto Mãe:</strong> +351916966759
+      <a href="tel:+351916966759" class="botao-chamada">📞 Ligar</a>
+    </p>
     <p><strong>Alergias:</strong> Nenhuma conhecida</p>
     <p><strong>Grupo Sanguíneo:</strong> O+</p>
   </div>
@@ -105,19 +118,24 @@
   </div>
 
   <script>
-  window.addEventListener('load', () => {
-    const aviso = document.getElementById('aviso-localizacao');
+    function mostrarBotaoAtivarGPS() {
+      const aviso = document.getElementById('aviso-localizacao');
+      aviso.innerHTML = `
+        ❌ Não foi possível obter a localização.<br>
+        Por favor, ative o GPS ou aceite a permissão.
+        <br><br>
+        <button onclick="tentarNovamente()" class="botao-gps">🔄 Ativar GPS</button>
+      `;
+    }
 
-    if (navigator.geolocation) {
+    function tentarNovamente() {
       navigator.geolocation.getCurrentPosition(
         function (pos) {
-          console.log("📍 Localização obtida:");
-          console.log("Latitude:", pos.coords.latitude);
-          console.log("Longitude:", pos.coords.longitude);
-
+          const aviso = document.getElementById('aviso-localizacao');
           aviso.classList.add("ocultar");
-		  const nome = window.location.pathname.split('/').pop().replace('.html', '');
-          // 🔥 Chamada à tua API com fetch()
+
+          const nome = window.location.pathname.split('/').pop().replace('.html', '');
+
           fetch('https://appnfcinformation-c8hah7bvgmeecvff.westeurope-01.azurewebsites.net/Localizacao', {
             method: 'POST',
             headers: {
@@ -125,25 +143,59 @@
               'Accept': '*/*'
             },
             body: JSON.stringify({
-              nome: nome, // <- podes trocar por algo dinâmico se quiseres
+              nome: nome,
               latitude: pos.coords.latitude.toString(),
               longitude: pos.coords.longitude.toString()
             })
           })
-          .then(response => response.json())
-          .then(data => console.log("✅ API respondeu:", data))
-          .catch(error => console.error("❌ Erro ao enviar localização:", error));
+          .then(res => res.json())
+          .then(data => console.log("✅ Enviado", data))
+          .catch(err => console.error("❌ Erro:", err));
         },
         function (err) {
-          console.error("❌ Erro ao obter localização:", err.message);
-          aviso.innerHTML = "❌ Não foi possível obter a localização. Por favor, ative o GPS ou aceite a permissão.";
+          mostrarBotaoAtivarGPS();
         }
       );
-    } else {
-      aviso.innerHTML = "⚠️ O seu navegador não suporta geolocalização.";
     }
-  });
-</script>
+
+    window.addEventListener('load', () => {
+      const aviso = document.getElementById('aviso-localizacao');
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            console.log("📍 Localização obtida:");
+            console.log("Latitude:", pos.coords.latitude);
+            console.log("Longitude:", pos.coords.longitude);
+            aviso.classList.add("ocultar");
+
+            const nome = window.location.pathname.split('/').pop().replace('.html', '');
+
+            fetch('https://appnfcinformation-c8hah7bvgmeecvff.westeurope-01.azurewebsites.net/Localizacao', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': '*/*'
+              },
+              body: JSON.stringify({
+                nome: nome,
+                latitude: pos.coords.latitude.toString(),
+                longitude: pos.coords.longitude.toString()
+              })
+            })
+            .then(res => res.json())
+            .then(data => console.log("✅ Enviado", data))
+            .catch(err => console.error("❌ Erro:", err));
+          },
+          function (err) {
+            mostrarBotaoAtivarGPS();
+          }
+        );
+      } else {
+        aviso.innerHTML = "⚠️ O seu navegador não suporta geolocalização.";
+      }
+    });
+  </script>
 
 </body>
 </html>
